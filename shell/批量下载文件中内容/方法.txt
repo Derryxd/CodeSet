@@ -1,0 +1,13 @@
+下载dir/infile里面的内容（colorbar）
+1、复制页面‘元素’（查看源代码）到一个文件里（如：tmp）
+2、搜索tmp文件内容按需存储
+    cat tmp | grep ".act" | awk -F'/' '{print $NF}' >> tmp.act
+    (act：一种类型 ； '/'：从/处到NF； NF：最后一列)
+3、把不同文件合并一起
+    cat tmp.act >> infile
+4、在infile文本里修改满足要求（如末尾都多出：”）
+    :%s/"//g (%s/pattern1/pattern2/g)
+5、运行脚本 
+    ./csh
+or 通过命令行
+   cat infile | awk '{print "wget path/to/your/file/"$0}' | sh
