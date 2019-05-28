@@ -1,0 +1,8 @@
+可变数据类型：列表list、集合set和字典dict；
+不可变数据类型：整型int、浮点型float、字符串型string和元组tuple
+
+tuple ()
+list  []
+set   {} : 里面不能有相同的东西
+字典也是{}，引用字典内容时，可以dict_var['key1']['ket2']
+			或者 dict_var['key']=value

@@ -1,0 +1,47 @@
+内置的：__builtin__  exceptions
+__builtin__
+如：string.TAB list.TAB 就有很多函数
+
+常用的：
+os
+sys
+re
+NumPy：N维数组容器
+SciPy：科学计算函数库
+Pandas：表格容器
+matplotlib
+mpl_toolkits.basemap
+imp
+profile
+time
+sklearn
+skimage
+
+函数
+type
+shape size len
+np.where
+glob.glob
+os.listdir
+os.walk
+cmp
+read readline readlines
+np.tile
+time.sleep
+os.environ
+
+
+import os
+for i in os.walk('c:'+os.sep+'ant'):
+    print i[1] 
+
+def listdir(leval,path):
+    for i in os.listdir(path):
+        print('|  '*(leval + 1) + i) 
+        if os.path.isdir(path+i):
+            listdir(leval+1, path+i)
+
+path = 'c:'+os.sep+'ant'
+#或者直接 path='C:/ant' 
+print(path+os.sep)
+listdir(0, path+os.sep)

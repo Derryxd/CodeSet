@@ -1,0 +1,43 @@
+conda install 
+
+lib	
+Python >= 2.6				
+Numpy >= 1.6.1		数值计算扩展
+Cython >= 0.21		速生成Python扩展模块的工具,从语法层面上来讲是Python和C的语法混血
+Six >=1.4			for smoothing over the differences between the Python versions 
+SciPy >=0.9			高端科学计算
+Matplotlib >= 1.1.0 可视化工具
+NetworkX >= 1.8		图论与复杂网络建模工具
+Pillow >= 1.7.8		图像处理库，支持多种图片格式
+dask[array] >= 0.5.0分析型并行计算库
+spyder				强大的IDE(集成开发环境)
+Jupyter				交互式笔记本，支持运行 40 多种编程语言
+scikit-image		图像处理库
+scikit-learn		里面有很多机器学习相关的算法（如聚类算法，SVM等）
+
+（直接安装mkl库，里面包含matplotlib、numpy、pandas、pyqt、qtconsole、scipy）
+
+以上安装可以在anaconda navigator里面打钩选择安装，比较快捷
+
+
+Pyro是一个用纯python代码实现的分布式对象系统
+
+pip install scrapy-splash     安装scrapy-splash库,利用第三方中间件来提供JS渲染服务，对JS生成的动态页面进行爬虫
+(利用webkit或者基于webkit库也可达到目的)
+
+Python3.x版本自带urllib，可以直接import
+
+basemap安装：
+Unofficial Windows Binaries for Python Extension Packages
+https://www.lfd.uci.edu/~gohlke/pythonlibs/
+
+1在上面网站寻找basemap1.1版本，如basemap.1.1.0.p36.cp36m.win_amd64.whl
+（32和64是指系统的版本，cp后面的数字是Python的版本）
+2先再anaconda安装geos和proj相关的库
+3然后在prompt中安装basemap，将whl文件放在prompt的路径中，然后pip install base（tab补全）.whl
+4测试是否成功from mpl_toolkits.basemap import Basemap
+
+
+Numba jit技术
+PyCUDA python编写cuda程序
+pdfminer3k pdf管理器，读写pdf

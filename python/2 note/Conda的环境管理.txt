@@ -1,0 +1,27 @@
+Conda的环境管理
+Conda的环境管理功能允许我们同时安装若干不同版本的Python，并能自由切换。假设我们需要安装Python 3.6，此时，我们需要做的操作如下：
+
+复制代码
+# 创建一个名为python34的环境，指定Python版本是3.4（不用管是3.4.x，conda会为我们自动寻找3.4.x中的最新版本）
+conda create --name python34 python=3.4
+ 
+# 安装好后，使用activate激活某个环境
+activate python34 # for Windows
+source activate python36 # for Linux & Mac
+# 激活后，会发现terminal输入的地方多了python36的字样，实际上，此时系统做的事情就是把默认3.5环境从PATH中去除，再把3.6对应的命令加入PATH
+ 
+# 此时，再次输入
+python --version
+# 可以得到`Python 3.6 :: Anaconda 4.1.1 (64-bit)`，即系统已经切换到了3.6的环境
+ 
+# 如果想返回默认的python 3.5环境，运行
+deactivate python36 # for Windows
+source deactivate python36 # for Linux & Mac
+ 
+# 删除一个已有的环境
+conda remove --name python36 --all
+复制代码
+用户安装的不同python环境都会被放在目录/anaconda/envs下，可以在命令中运行conda info -e查看已安装的环境，当前被激活的环境会显示有一个星号或者括号。
+
+
+conda list 查看安装了哪些包
