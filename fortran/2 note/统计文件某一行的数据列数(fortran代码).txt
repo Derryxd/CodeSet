@@ -1,0 +1,54 @@
+	PROGRAM MAIN
+	IMPLICIT NONE
+	INTEGER m,nmax,cnum
+	CHARACTER*80 filename
+	CHARACTER*1 sign
+	PRINT*,'文件名：'
+	READ*,filename
+	PRINT*,'行序号：'
+	READ*,m
+	PRINT*,'行的最大列数：'
+	READ*,nmax
+	PRINT*,'分隔符：'
+	READ(*,100),sign
+100	FORMAT(A1)
+	CALL CLOUMN(filename,m,nmax,sign,cnum)
+	PRINT*,cnum
+	ENDPROGRAM
+
+***************************************************************************************
+* 子程序功能：统计文件中某行的列数，列与列间以分割字符sign区分                        *
+* 作者：快乐的牛和牛                                                                  *
+* 日期：2011年11月5日                                                                 *
+* 参数说明：                                                                          *
+* filename------------文件名                                                          *
+* m-------------------要统计的行序号                                                  *
+* nmax----------------第m行中包含分隔符在内的字符个数，估计值，用于保证完整地读取一行 *
+* sign----------------分割字符                                                        *
+* cnum----------------返回值，返回列数                                                *
+* 注意：未考虑文件无数据、多分隔符、分隔符字串、空行等情况                            *
+* 启示：字符变量可对所有字符不加区分地进行处理，文件的统计操作使用字符串更有效        *
+***************************************************************************************
+
+	SUBROUTINE CLOUMN(filename,m,nmax,sign,cnum)
+	IMPLICIT NONE
+	INTEGER m,nmax,i,cnum
+	CHARACTER*80 filename
+	CHARACTER*1 C0(1:nmax),sign
+	cnum=1
+	OPEN(101,FILE=filename,ACTION='READ')
+	DO i=1,m-1,1
+	 READ(101,*)
+	ENDDO
+	READ(101,100) C0
+100	FORMAT(<nmax>A1)
+	PRINT*,C0
+	DO i=1,nmax-1,1
+	  IF( (C0(i)==sign) .AND. (C0(I+1)/=sign) ) cnum=cnum+1
+	ENDDO
+	CLOSE(101)
+	RETURN
+	ENDSUBROUTINE
+
+
+

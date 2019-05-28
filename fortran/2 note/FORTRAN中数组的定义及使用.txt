@@ -1,0 +1,228 @@
+FORTRAN中数组的定义及使用
+
+From: 《Fortran 95 程序设计》 彭国伦
+1.基本使用：
+一维数组：
+datatype name (size)
+datatype: integer, real, complex, logical,或type自定义出来的类型。
+integer, parameter :: students = 5
+integer :: student (students)
+其他定义方法：
+integer a(10) !最简单的
+integer, dimension (10) :: a !另外的方法
+integer, dimension (10) :: a,b,c !一起定义
+integer a          !f77 先声明a是整型，
+dimension a(10)   ！再声明a是大小为10的数组
+或type
+type :: person
+     real ::height, weight
+end type
+type (person) :: a(10)
+a(2)%height = 180.0
+
+
+二维数组：
+integer a(3, 3)
+a(1,1) = 3
+定义方法：
+integer a(10,10)
+integer, dimension (10, 10) :: a,b,c
+integer a
+dimension a(10,10) ! f77, 先定义类型
+二维数组常用来当作矩阵使用。
+
+多维数组：
+frotran最多可声明高达七维的数组。
+integer a(D1,D2,...,Dn) ！n维
+一般说来，越高维数组读数据越慢。
+
+另类声明方法：
+integer a(5) 可使用的是a(1), a(2), a(3), a(4), a(5)
+integer a(0:5) 下标可使用的是0～5，a(0),a(1),...,a(5)六个元素。
+integer a(-3：3) 可以使用的是a(-3), a(-2), a(-1), a(0),...,a(3)七个元素。
+integer a (5,0:5) 可用a(1~5, 0~5)
+integer b(2:3, -1:3) 可用b(2~3, -1~3)
+
+2.数组内容的设置
+赋初值：
+integer a(5)
+data a /1, 2, 3, 4, 5/
+data a /5*3/   !5个3    ＊表示数据重复
+
+“隐含式”循环的功能设置初值：
+integer a(5)
+integer i
+data(a(i),i=2,4) /2,3,4/     !a(2)=3,a(3)=3,a(4)=4
+输出：write (*,*) (a(i), i=2, 4) 显示a(2),a(3),a(4)
+也可以设置累加值：
+(a(i),i=2,10,2) ! 循环执行5次，i分别是2,4,6,8,10。
+
+“隐含”选还可以多层嵌套：多维数组
+integer a(2,2)
+integer i,j
+data((a(i,j), i=1,2),j=1,2) /1,2,3,4/
+里面的循环先执行，结果：
+a(1,1)=1, a(2,1)=2, a(1,2)=3, a(2,2)=4
+
+F90中可以省掉data描述，直接设置初值：
+integer :: a(5) = (/1,2,3,4,5/) ! 注意：括号和除号之间不能有空格。
+省掉 data直接把初值写在声明之后时，不能像data时那样，用隐式循环对数组中部分元素设初值，每个元素必须给定初值，而且写法有点不同：
+integer :: i 
+integer :: a(5) = (/ 1, (2, i=2,4), 5/)
+!a(1) = 1
+!a(2)=2,a(3)=2, a(4)=2   !(2,i=2,4) 是隐式循环
+!a(5)=5
+f90中的隐式循环：
+integer :: a(5)= (/i, i=1,5/)
+!a(1)=1, a(2)=2, a(3)=3, a(4)=4, a(5)=5
+
+3.对整个数组的操作(数组广播)
+a=5 ! a是任意维数的数组，全部元素设为5
+a=(/1,2,3/) ！ 右边数字数目应该和数组的大小一样
+a=b ！a,b同样维数及大小的数组，相同位置的元素赋给a
+a=b+c！三个都是相同维数大小的数组，相同位置的数字相加给a
+a=b-c
+a=b*c！注意不等于矩阵的相乘，a(i,j)= b(i,j)*c(i,j)
+a=b/c
+a=sin(b)   !a(i)=sin(b(i))
+
+4. 对部分数组的操作
+a(3:5) = 5
+a(3:) = 5
+a(3:5) = (/3,4,5/)
+a(1:3) = b(4:6)
+a(1:10) = a(10:1:-1) !使用隐含循环的方法将数组a(1~10)的内容翻转。
+a(:) = b(:, 2)
+a(:, :) = b(:, :, 1)
+!拿数组的一部分内容使用的时候，需要注意的原测：
+（1）等号两边的数组元素数目要一样多。
+（2）同时使用多个隐含循环的时候，较低维数循环可以看作是内层的循环。
+
+5. WHERE: 
+F95的添加功能，用来取出部分数组的内容进行设置。where命令可以经过逻辑判断来使用数组的一部分。
+example:
+!把数组a中小于3的元素值设置给b
+where(a<3)
+    b=a              ！这里a,b维数大小相等
+end where
+也可以写成：
+where (a<3) b=a    ！与if相似 
+！where命令的代码简单，执行起来速度快。
+！where是用来设置数组的，所以它的模块中只能出现与设置数组相关的命令，而且在它的整个程序模块中所使用的数组变量，都必须是同样维数大小的数组。
+还可以配合elsewhere来处理逻辑不成立的情况：
+where (a<3)
+    b=1
+elsewhere
+    b=2
+end where
+还可作多重判断，只要elsewhere后接上逻辑判断就行了：
+where (a<2)
+    b=1
+elsewhere(a>5)
+    b=2
+elsewhere
+    b=3
+end where
+可以嵌套的，跟循环一样可以取名字，不过在end where的时候一定要加上它的名字，用来明确要结束哪个where模块：
+name: where (a<5)
+    b=a
+end where name
+
+where(a<5)
+    where(a/=2)
+       b=3
+    elsewhere
+       b=1
+    end where
+elsewhere
+    b=0
+end where
+
+6.FORALL: F95添加
+integer i
+integer :: a(5)
+
+forall (i=1:5)
+    a(i)=5
+end forall
+
+forall(i=1:5)
+    a(i)=i
+end forall
+
+forall的详细语法：
+forall (triplet1 [, triplet2 [, triplet3...]], mask)
+     ........
+end forall
+
+tripletn是用来赋值数组坐标范围的值。如forall (i=1:5)中i=1:5 就是一个triplet。
+
+integer :: a(10, 5)
+forall (i=2:10:2, j=1:5)
+    a(i,j) = i+j
+end forall
+
+mask是用来作条件判断的，跟where命令中使用的条件判断类似，可以用来限制forall程序模块中只作用于数组中符合条件的元素。还可以作其他限制。
+forall (i=1:5, j=1:5, a(i, j)<10 )   ！只处理a中小于10的元素
+    a(i,j) = 1
+end forall
+
+forall (i=1:5, j=1:5, i==j)   !只处理i==j的元素
+   a(i,j) = 1
+end forall
+
+forall(i=1:5, j=1:5, ((i>j) .and. a(i,j)>0))
+!还可赋值好几个条件，这里只处理二维矩阵的上三角部分且a(i,j)>0的元素
+    a(i,j)=1/a(i,j)
+end forall
+
+如果只有一行代码时候也可以省掉end forall，写在同一行：
+forall (i=1:5, j=1:5, a(i,j)/=0) a(i,j)=1/a(i,j)
+
+forall 可以多层嵌套，里面只能出现跟设置数组数值相关的程序命令，还可以在forall中使用where。不过where中不可以使用forall。
+forall (i=1:5)
+    forall (j=1:5)
+       a(i,j) = 1
+    end forall
+    forall (j=6:10)
+        a(i,j) = 2
+    end forall
+end forall
+
+forall (i=1:5)
+    where (a(:, i) /=0)
+        a(:, i) = 1.0/a(:, i)
+    end where
+end forall
+
+7. fortran 中数组的保存规则
+不管数组的形状，它所有的元素都是分布在内存中同一个连续的模块当中。
+多维数组在内存中的连续模块排列情况是以一种列优先的方法排列的，数组存放在内存中的时候，会先放入第一个列中每个行的元素，然后再放入下一个列中每一行的元素。
+exmaple: a(1,1)->a(2,1)->a(3,1)=>a(1,2)->a(2,2)->a(3,2)=>a(1,3)->a(2,3)->a(3,3)
+也即对多维数组，会先放入维数的元素，再放入较高维数的元素。
+数组元素位置的计算：
+一个n维数组a(D1,D2,...,Dn)
+设： sn=D1*D2*...*Dn
+则a(d1,d2,d3,...,dn)在第1+(d1-1)+(d2-1)*s1+ ... +(dn-1)*sn-1个位置。
+使用数组时候最好用低维的下标作为内循环，这样比较快。
+
+8.可变大小的数组：（allocate, allocatable, deallocate）
+integer :: students, error = 0
+integer ,allocatable :: a(:)   !定义a是可变大小的数组
+...
+read(*,*) students
+allocate(a(students), stat=error) ! or allocate(a(students))   ！申请数组内存空间
+...
+deallocate(a)    ！释放动态数组占用的内存空间
+多维数组：
+integer, allocatable :: a2(:, :)
+integer, allocatable :: a3(:, :, :)
+allocate(a2(5, 5))
+allocate(a3(5, 5, 5))
+或
+allocate(a2(-3:3, -3:3))
+相关的函数allocated可用来检查一个可变大小的数组是否已经配置内存来使用，会返回一个逻辑值。
+example:
+if(.not. allocated(a)) then
+    allocate(a(5))
+end if

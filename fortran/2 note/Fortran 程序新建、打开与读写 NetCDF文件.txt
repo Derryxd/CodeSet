@@ -1,0 +1,298 @@
+1. 相关函数列表
+1.1 建立新文件需要的变量         
+    NF_CREATE           ! create netCDF dataset: enter define mode
+       NF_DEF_DIM       ! define dimensions: from name and length
+       NF_DEF_VAR       ! define variables: from name, type, dims
+       NF_PUT_ATT       ! assign attribute values
+    NF_ENDDEF           ! end definitions: leave define mode
+       NF_PUT_VAR       ! provide values for variable
+    NF_CLOSE            ! close: save new netCDF dataset
+
+1.2 读取已知变量的旧文件
+    NF_OPEN             ! open existing netCDF dataset
+       NF_INQ_DIMID     ! get dimension IDs
+       NF_INQ_VARID     ! get variable IDs
+       NF_GET_ATT         ! get attribute values
+       NF_GET_VAR        ! get values of variables
+    NF_CLOSE            ! close netCDF dataset
+
+1.3 读取未知变量的旧文件
+    NF_OPEN                   ! open existing netCDF dataset
+    NF_INQ                    ! find out what is in it
+       NF_INQ_DIM             ! get dimension names, lengths
+       NF_INQ_VAR             ! get variable names, types, shapes
+       NF_INQ_ATTNAME      ! get attribute names
+       NF_INQ_ATT          ! get attribute values
+          NF_GET_ATT          ! get attribute values
+       NF_GET_VAR             ! get values of variables
+    NF_CLOSE                  ! close netCDF dataset
+
+1.4 增加变量于旧文件中
+    NF_OPEN             ! open existing netCDF dataset
+    NF_REDEF            ! put it into define mode
+      NF_DEF_DIM        ! define additional dimensions (if any)
+      NF_DEF_VAR        ! define additional variables (if any)
+      NF_PUT_ATT        ! define other attributes (if any)
+    NF_ENDDEF           ! check definitions, leave define mode
+      NF_PUT_VAR        ! provide new variable values
+    NF_CLOSE            ! close netCDF dataset
+
+
+2. 新建、打开、变量定义与关闭的 Fortran 程序
+
+   由于使用的是 NetCDF 的参数，所以在每个 Fortran 程序之前均需要加入 『 include  'netcdf.inc'』这一行字。其中 “netcdf.inc”文件是安裝完了 NetCDF 后所产生的文件，放置在『 /usr/local/include 』中！
+     
+2.1  NF_STRERROR(status)
+
+    提供错误訊息！其中 status 为你程序執行错误時所傳回來的数字，为整数！
+    你可以写一个如下的副程序在每一个文件的結尾處，將可以讓你的程序具有輸出错误訊息的功能！
+    -----
+    subroutine  handle_err(status)
+    integer  status
+    if  (status  .NE.  nf_noerr) then
+        print  *, nf_strerror(status)
+        stop  'stopped'
+    endif
+    end
+    -----
+     
+2.2  NF_INQ_LIBVERS()
+
+    取得你的 NetCDF 程序版本，语法为：
+    -----
+    print  *, nf_inq_libvers()
+    -----
+     
+2.3  NF_CREATE('filename', mode, ncid)     <==极重要，新增加文件用
+
+    若你要建立一个名为 netcdf.ncf 的 NetCDF 文件，則你需要定义：文件号(ncid 为整数)和写入方式(mode，分为 nf_clobber, nf_noclobber, nf_share)。
+    要注意的是，ncid 虽然只是个整数，但这个数字是由程序自动产生的，因此不可以設定为固定值！必須为变量！
+    -----
+    integer  status, ncid
+    status=nf_create('netcdf.ncf', nf_clobber, ncid)
+    if (status  .NE.  nf_noerr)  call  handle_err(status)  <==若有错误刚執行 handle_err 这个子程序
+    -----
+     
+2.4  NF_OPEN('filename', mode, ncid)   <==極重要，打开已有文件用
+
+     打开一个已存在的文件！只有参数 mode 与 nf_create 不同，其主要分为 nf_write (可读写), nf_nowrite (只读，这是预设值), 及 nf_share 三个主要模式。
+    -----
+    status=nf_open('netcdf.ncf', nf_nowrite, ncid)
+    -----
+     
+2.5 NF_REDEF(ncid)  <== 与 NF_OPEN 搭配使用
+
+    当你要在一个已存在的文件中加入新变量時使用的！
+    -----
+    status=nf_redef(ncid)
+    -----
+     
+2.5 NF_INQ(ncid, ndims, nvars, ngatts, unlimdimid)
+
+    这个指令用在读取一个已存在文件的变量、层数、与說明檔数目，所以當然是与 nf_open 有关啰！基本上与读取檔較为相关。
+    -----
+    status=nf_inq(ncid, ndims, nvars, ngatts, unlimdimid)
+    write(*,*), ndims, nvars, ngatts, unlimdimid
+    -----
+     
+2.6 NF_ENDDEF(ncid)
+
+    这指令很重要，前面一章提過一个 fortran 程序可分为：变量定义区与资料區，而变量定义『一定』要关閉之后才能进行資料的輸入！因此定义完变量之后一定要有这个指令才行：
+    -----
+    status=nf_enddef(ncid)
+    -----
+     
+2.7 NF_CLOSE(ncid)
+
+    这个参数可下可不下，不過在你完成了一个 NetCDF 的工作之後，最後還是下達这个指令，以使文件关闭！
+    -----
+    status=nf_close(ncid)
+    -----
+
+
+3. 定义dimention 指令
+
+    在建立或打开了一个文件之後，再來就是要宣告维数(dimention)啦！维数的宣告指令如下：
+     
+3.1 NF_DEF_DIM(ncid, name, len, dimid) <==与 nf_create 搭配
+
+    在打开文件号为 ncid 的文件中，增加一个名为 name 的维，其长度为 len 个，并传回來 ID 为 dimid，注意，这里的 dimid 也必須是变量喔！
+    若在第一号文件中增加一个 lat 的维，长度18个，并增加一个 rec 维，长数可无限增加，则分別可写成：
+    -----
+    status=nf_def_dim(ncid, 'lat', 18, latid)
+    status=nf_def_dim(ncid, 'rec', nf_unlimited, recid)
+    -----
+     
+3.2 NF_INQ_DIMID(ncid, name, dimid)
+
+    主要与 nf_open 搭配，目的在取得已存在文件的维 ID，这是因为在每个维数中均有其代号（就是 ID），透過这个代号可以將相关的文件訊息读入！所以在读取一个已知文件時，通常需要这个指令喔！如下面的程序中若与上面一个指令相配合！
+    -----
+    status=nf_inq_dimid(ncid, 'lat', LATID)
+    -----
+     
+3.3  NF_INQ_DIM(ncid, dimid, name, len)
+
+    一定是与 nf_inq_dimid（） 配合使用的，由 nf_inq_dimid 取得维数的代号之後，以这个指令將此维数(dimention)的訊息取得之。与上面的程序相配合，由下面的指令可以發現 name='lat', len=18。
+    -----
+    status=nf_inq_dim(ncid, LATID, name, len)
+    -----
+     
+3.4  NF_RENAME_DIM(ncid, dimid, name)
+
+    这是一个可以改变维名称的指令，与上面的程序相配合的話，則可以將 lat 改成 latitude 的维名稱：
+    -----
+    status=nf_rename_dim(ncid, LATID, 'latitude')
+    -----
+
+
+4. 建立和读取变量资料
+
+ 基本上变量的定义用 nf_def_xxx, 而变量的調查使用 nf_inq_xxx, 变量的写入使用 nf_put_xxx, 而变量的读取則使用 nf_get_xxx，以下分別介紹之：
+     
+4.1  定义变量： NF_DEF_VAR(ncid, name, xtype, nvdims, vdims, varid)   
+
+    name：变量名称；
+    xtype：变量类型，分別是：nf_byte, nf_char, nf_short, nf_int, nf_float, nf_double 等六种；
+    nvdims：变量的內变量为多少；
+    vdims：变量的函数相對應的维数ID；
+    varid：变量ID。
+
+     假设我們要記錄一个相對湿度的变量，其根据经纬度及時間（三个內变量），所以 vdims 就必須与 经度、纬度、時間的ID相同啦！且其变量ID 設为 VARID ，則可以写成：
+    -----
+    status=nf_creat('netcdf.ncf, nf_noclobber, ncid)
+    status=nf_def_dim(ncid, 'lat', 5, LATID)
+    status=nf_def_dim(ncid, 'lon', 10, LONID)
+    status=nf_def_dim(ncid, 'time', nf_unlimited, TIMEID)
+    integer  RHDIMS(3)
+    RHDIMS(1) = LONID
+    RHDIMS(2) = LATID
+    RHDIMS(3) = TIMEID
+    status=nf_def_var(ncid, 'rh', nf_double, 3, RHDIMS, RHID)
+    -----
+     
+4.2  查看变量ID： NF_INQ_VARID(ncid, 'name', varid)    
+
+    与 nf_inq_dimid 语法相似。在取得了变量的 ID 之後才可以读取变量的其他信息！
+    -----
+    status=nf_inq_varid(ncid, 'lat', LATID)
+    print *, LATID  <== 可以列出從上个指令取得的变量代码！
+    -----
+     
+4.3  NF_INQ_VAR(ncid, varid, 'name', xtype, ndims, dimids, natts)
+
+    根据 ncid 与 varid （前一个指令得到的）兩个資料，便可取得 xtype, ndims, dimids, natts 的信息！
+    -----
+    status=nf_inq_var(ncid, LATID, latname, lattype, nlat, latdims, latnatts)
+    write(*,*), latname, lattype, nlat, latdims, latnatts
+    -----
+     
+4.4  写入变量：NF_PUT_VAR1_type(ncid, varid, index(x), type_val)   
+
+    將你的『一筆資料』『写入』資料儲存區！是很重要的一个指令！其中，type 为六種資料类型的名稱，分別为『TEXT, INT1, INT2, INT, REAL, DOUBLE』六種。至於 index 則是一个陣列，指出变量要存的地方，下面的指令更重要喔！可以去看看！在这个指令的语法：若我們要記錄三个相對湿度進入文件中，且三个相對湿度都是 0.5 ，則：
+    -----
+    integet  RHINDX(3)
+    data  RHINDX  /4, 3, 2/
+    statuse=nf_put_var1_double(ncid, RHID, RHINDX, 0.5)
+    -----
+     
+4.5   NF_PUT_VAR_type(ncid, varid, type_var(x))
+
+    这个指令比剛剛的更常使用在一个新建立的文件中，因为他是將『所有的資料陣列均写入文件中』的一个指令！type 的类型与上个指令相同。假設我們要写入一个三维陣列函数（相對湿度），你可以这樣写：
+    -----
+    double  rhvar(ilon, ilat, itime)
+    do 10 ilon=1, lons
+         do 10 ilat=1, lats
+              do 10 itime=1, times
+                   rhvar(ilon, ilat, itime)=0.5
+    10 continue
+    status=nf_put_var_double(ncid, RHID, rhvar)
+    -----
+     
+4.6    NF_PUT_VARA_type(ncid, varid, start(x), count(x), type_var(x))
+
+    这个指令在於写入一部分資料進入一个 array 中。注意！这个 array 的维数要与已存在的文件相同，你可以与下一个指令相配合著看！这个指令比較常用在新增加或取代一部分資料於一个已存在的文件中。其中，start(x)指开始写入的位置，count(x)則是写入的个数！与上一个指令的範例相配合，我們可以發現 rhvar 为一个三维的陣列，所以 start 与 count 都需要輸入三个变量啟始与个数值。若由第1个写起，共写了 lons, lats, times 个，則：
+    -----
+    integer  start(3), count(3)
+    data  start  /1, 1, 1/
+    data  count  /lons, lats, times/
+    status=nf_put_vara_double(ncid, RHID, start, count, rhvar)
+    -----
+     
+4.7     NF_PUT_VARS_type(ncid, varid, start(x), count(x), stride(x), type_var(x))
+
+    配合上一个指令，这个指令僅写入一个比原來的陣列(array)還要小的陣列中，更常用於取代一个已存在的文件中的資料。例如上一个指令的範例中 rhvar 为三维变量，我們要改变其中兩个维数，則可以写成：
+    -----
+    integer  start(2), count(2), stride(2)
+    statuse=nf_put_vars_real(ncid, RHID, start, count, stride, rh)
+    -----
+     
+4.8    NF_PUT_VARM_type(ncid, varid, start(x), count(x), staride(x), imap(x), type_var(x))
+
+    这个指令我看不太懂，因为 map 的定義我并不明瞭之故！不過，基本上儲存变量的方法以 nf_put_var, nf_put_vara, nf_put_var1 这三个指令較为重要！
+     
+4.9     NF_GET_VAR1_type(ncid, varid, index(x), type_var)
+
+    这个指令在取得某变量的『一筆資料』，例如 rhval 这个三维資料中，我們要取得 rhval(4,3,2) 这个变量值，你可以这樣写：
+    -----
+    integet  rhidx(3)
+    data  rhidx  /4, 3, 2/
+    statuse=nf_get_var1_double(ncid, RHID, rhidx, rhval)
+    print *, rhval
+    -----
+     
+4.10    NF_GET_VAR_type(ncid, varid, type_var(x))
+
+    这个指令則是『取得某一变量的全部資料』。其中 type_var(x) 是一个陣列囉！
+    -----
+    status=nf_get_var_double(ncid, RHID, rhval)
+    -----
+     
+4.11    NF_GET_VARA_type(ncid, varid, start(x), count(x), type_var(x))
+
+    同樣的，这个指令就是取得某一个陣列區域內的变量資料啦！用法与前面 nf_put_vara_type 相同哩！
+     
+4.12    NF_GET_VARS_type(ncid, varid, start(x), count(x), stride(x), type_var(x))
+
+    这个也應該不用再說了吧！就是取得更小的陣列的資料啦！
+     
+4.13    NF_RENAME_VAR(ncid, varid, 'newname')
+
+    这个指令在更改一个变量的名稱，需要与 nf_redef, nf_inq_varid 配合写入，如下所示：
+    -----
+    status=open('netcdf.ncf', nf_write, ncid)
+    status=nf_redef(ncid)
+    status=nf_inq_varid(ncid, 'rh', RHID)
+    status=nf_rename_var(ncid, RHID, 'rel_hum')
+    status=nf_enddef_dim(ncid)
+    -----
+
+
+5. 建立与取得說明資料
+
+    你已經建立好了一个 NetCDF 的文件了，但是你这个文件內容的属性还沒有詳細的定义，这个说明部分就是所谓的 attributes 部分。为何要加入这一部分呢？这是因为我們在前面的時候就已經提到了， NetCDF 可以有很詳細的文件属性說明，以避免文件的內容被误判！基本上 Models-3 裡面的输出文件，都有很詳細的說明文件头，另外，針對每一个变量亦均加入了适当的說明，例如單位(moles/s)、长名(long name)等等。
+     
+5.1  NF_PUT_ATT_type(ncid, varid, 'name', xtype, len, type_var(x))
+
+    同樣的，与（進階四）中提到的相同， xtype 共分为六種类型：nf_byte, nf_char, nf_short, nf_int, nf_float, nf_double 等六種。而 type_var(x) 是一个陣列喔！例如我們要對 rh 進行变量說明，說明的內容为 『valid_range』，而我們給他的合理區間在 （0.0D0 ～ 100.0D0）則：
+    -----
+    double rhrange(2)
+    data  rhrange  /0.0D0, 100.0D0/
+    status=nf_put_att_double(ncid, RHID, 'valid_range', nf_double, 2, rhrange)
+    -----
+     
+ 5.2   NF_INQ_ATT(ncid, varid, 'name', xtype, len)
+
+    調查 attributes 的檔頭說明，通常与 nf_inq_varid 配合使用。
+    -----
+    status=nf_inq_varid(1, 'rh', rhid)
+    status=nf_inq_att(ncid, rhid, name, xtype, len)
+    write(*,*), name, xtype, len
+    -----
+     
+5.3    NF_GET_ATT_type(ncid, varid, 'name', type_var(x))
+
+    取得 attribute 的內容！
+    -----
+    status=nf_get_att_double(ncid, rhid, 'balid_range', vrval)
+    -----
+     
