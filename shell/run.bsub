@@ -1,0 +1,21 @@
+#BSUB -J iap -x
+#BSUB -n 200
+#BSUB -q gpu
+#BSUB -W 0:40
+##BSUB -i namelist_p960
+##BSUB -R "rusage[mem=100000]"
+#BSUB -R "span[ptile=20]"
+#BSUB -o %J.out -e %J.err
+##export OMP_NUM_THREADS=1
+##export OMP_SCHEDULE=dynamic,1
+##limit coredumpsize 1000000
+##limit stacksize unlimited
+#ulimit -s unlimited
+#ulimit -c unlimited
+#ulimit -s
+#ulimit -a
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/work1/jjr/soft/nco/lib:/work1/jjr/soft/lib:/work1/jjr/soft/netcdf2/lib:/soft/cuda/6.0.37/lib64
+mpijob.intelmpi-2 ./ccsm.exe 
+#module load mpi/openmpi/1.8.1/intel
+#/usr/bin/time -av mpirun -np 32  /home/user12/zhangh/IAP4_0.5/run/IAP4
+#mpirun -bootstrap ssh -genvall -np 512 -machinefile $ma_file /home/user12/zhangh/IAP4_0.5/run/IAP4
